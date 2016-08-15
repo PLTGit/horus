@@ -74,10 +74,29 @@ class Board(object):
         logger.info("Connecting board {0} {1}".format(self.serial_name, self.baud_rate))
         self._is_connected = False
         try:
-            self._serial_port = serial.Serial(self.serial_name, self.baud_rate, timeout=2)
+
+            # Remove any dust from the port before opening for data comm
+            temp_port = serial.Serial(self.serial_name)
+            with temp_port:
+                temp_port.setDTR(False)
+                time.sleep(1)
+                temp_port.flushInput()
+                temp_port.setDTR(True)
+                temp_port.close()
+                del temp_port
+
+            # Open in a more official capacity
+            self._serial_port = serial.Serial(
+                port     = self.serial_name,
+                baudrate = self.baud_rate,
+                timeout  = 2
+                )
+
             if self._serial_port.isOpen():
+                logger.info("Connected to board, sending reset and checking version")
                 self._reset()  # Force Reset and flush
                 version = self._serial_port.readline()
+                logger.info("Received board version: '{0}'".format(version))
                 if "Horus 0.1 ['$' for help]" in version:
                     raise OldFirmware()
                 elif "Horus 0.2 ['$' for help]" in version:

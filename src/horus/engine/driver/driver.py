@@ -37,8 +37,8 @@ class Driver(object):
         exception = None
         self.is_connected = False
         try:
-            self.camera.connect()
             self.board.connect()
+            self.camera.connect()
         except Exception as e:
             exception = e
         else:
